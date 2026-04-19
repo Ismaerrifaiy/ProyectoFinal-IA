@@ -20,10 +20,9 @@ export async function loadModels(): Promise<void> {
 export async function getDescriptor(
   input: HTMLVideoElement | HTMLCanvasElement
 ): Promise<Float32Array | null> {
-  // @ts-ignore - face-api.js tiene tipos inconsistentes con withFaceLandmarks
   const detection = await faceapi
     .detectSingleFace(input, new faceapi.TinyFaceDetectorOptions())
-    .withFaceLandmarks()
+    .withFaceLandmarks(true)
     .withFaceDescriptor()
   return detection?.descriptor ?? null
 }
