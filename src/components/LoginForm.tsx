@@ -54,7 +54,7 @@ export default function LoginForm() {
 
   async function handleFace(capturedDescriptor: Float32Array) {
     if (!storedDescriptor) return
-    const match = isSamePerson(storedDescriptor, capturedDescriptor)
+    const match = await isSamePerson(storedDescriptor, capturedDescriptor)
     if (match) {
       router.push('/dashboard')
     } else {

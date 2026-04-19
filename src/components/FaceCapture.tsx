@@ -26,8 +26,10 @@ export default function FaceCapture({ onCapture, label = 'Capturar cara' }: Face
           await videoRef.current.play()
         }
         setStatus('ready')
-      } catch {
-        setError('No se pudo acceder a la cámara o cargar los modelos.')
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err)
+        setError('Error: ' + msg)
+        console.error('[FaceCapture]', err)
       }
     }
 
