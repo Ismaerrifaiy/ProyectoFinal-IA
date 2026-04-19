@@ -37,7 +37,17 @@ export default function RegisterForm() {
       return
     }
 
-    // 2. Guardar perfil con descriptor facial
+    // 2. Si no hay sesión (email no confirmado), hacer login para obtenerla
+    if (!data.session) {
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+      if (signInError) {
+        setError('Usuario creado pero no se pudo iniciar sesión: ' + signInError.message)
+        setLoading(false)
+        return
+      }
+    }
+
+    // 3. Guardar perfil con descriptor facial
     const { error: profileError } = await supabase.from('profiles').insert({
       id: data.user.id,
       username,
