@@ -1,0 +1,139 @@
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase'
+import FaceCapture from '@/components/FaceCapture'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+
+export default function RegisterForm() {
+  const router = useRouter()
+  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [descriptor, setDescriptor] = useState<Float32Array | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!descriptor) {
+      setError('Debes capturar tu cara antes de registrarte.')
+      return
+    }
+    setLoading(true)
+    setError(null)
+
+    const supabase = createClient()
+
+    // 1. Registrar en Supabase Auth
+    const { data, error: authError } = await supabase.auth.signUp({ email, password })
+    if (authError) {
+      setError(authError.message)
+      setLoading(false)
+      return
+    }
+    if (!data.user) {
+      setError('No se pudo crear el usuario.')
+      setLoading(false)
+      return
+    }
+
+    // 2. Si no hay sesión activa (email confirmation habilitado), iniciar sesión
+    let userId = data.user.id
+    if (!data.session) {
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+      if (signInError || !signInData.user) {
+        // Si falla porque no está confirmado, mostrar mensaje claro
+        setSuccess(true)
+        setLoading(false)
+        return
+      }
+      userId = signInData.user.id
+    }
+
+    // 3. Guardar descriptor facial en profiles
+    const { error: profileError } = await supabase.from('profiles').insert({
+      id: userId,
+      username,
+      face_descriptor: Array.from(descriptor),
+    })
+
+    if (profileError) {
+      setError('Error al guardar perfil: ' + profileError.message)
+      setLoading(false)
+      return
+    }
+
+    router.push('/login?registered=true')
+  }
+
+  if (success) {
+    return (
+      <Alert>
+        <AlertDescription>
+          Cuenta creada. Revisa tu email y confirma tu cuenta, luego vuelve a intentar registrarte para guardar tu cara.
+          <br /><br />
+          <strong>Tip:</strong> Para evitar esto, desactiva la confirmación de email en Supabase Dashboard → Authentication → Email → desactiva "Confirm email".
+        </AlertDescription>
+      </Alert>
+    )
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-sm">
+      <div className="flex flex-col gap-1">
+        <Label htmlFor="email">Email</Label>
+        <Input
+          id="email"
+          type="email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          required
+        />
+      </div>
+      <div className="flex flex-col gap-1">
+        <Label htmlFor="username">Nombre de usuario</Label>
+        <Input
+          id="username"
+          value={username}
+          onChange={e => setUsername(e.target.value)}
+          required
+        />
+      </div>
+      <div className="flex flex-col gap-1">
+        <Label htmlFor="password">Contraseña (mín. 6 caracteres)</Label>
+        <Input
+          id="password"
+          type="password"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          required
+          minLength={6}
+        />
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <Label>Reconocimiento facial</Label>
+        <p className="text-xs text-muted-foreground">
+          Colócate frente a la cámara y pulsa &quot;Capturar cara&quot;.
+        </p>
+        <FaceCapture onCapture={setDescriptor} />
+      </div>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      <Button type="submit" disabled={loading || !descriptor}>
+        {loading ? 'Registrando...' : 'Crear cuenta'}
+      </Button>
+    </form>
+  )
+}
