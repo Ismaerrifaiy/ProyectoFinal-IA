@@ -15,3 +15,8 @@ create policy "Usuario puede leer su propio perfil"
 create policy "Usuario puede insertar su propio perfil"
   on public.profiles for insert
   with check (auth.uid() = id);
+
+create policy "Usuario puede actualizar su propio perfil"
+  on public.profiles for update
+  using (auth.uid() = id)
+  with check (auth.uid() = id);

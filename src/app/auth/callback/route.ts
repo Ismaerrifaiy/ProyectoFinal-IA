@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get('code')
+  const next = request.nextUrl.searchParams.get('next') ?? '/auth/face'
   const origin = request.nextUrl.origin
 
   if (code) {
@@ -25,5 +26,5 @@ export async function GET(request: NextRequest) {
     await supabase.auth.exchangeCodeForSession(code)
   }
 
-  return NextResponse.redirect(`${origin}/auth/face`)
+  return NextResponse.redirect(`${origin}${next}`)
 }

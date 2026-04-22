@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { isSamePerson } from '@/lib/face'
 import FaceCapture from '@/components/FaceCapture'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import AuthLayout from '@/components/AuthLayout'
+import { Loader2 } from 'lucide-react'
 
 type Mode = 'loading' | 'register' | 'verify'
 
@@ -69,37 +69,35 @@ export default function FacePage() {
 
   if (mode === 'loading') {
     return (
-      <main className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground text-sm">Cargando...</p>
-      </main>
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+      </div>
     )
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle className="text-center">
-            {mode === 'register' ? 'Registra tu cara' : 'Verifica tu identidad'}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col items-center gap-4">
-          <p className="text-sm text-center text-muted-foreground">
+    <AuthLayout>
+      <div className="flex flex-col gap-5">
+        <div>
+          <h2 className="text-[22px] font-semibold text-slate-900 leading-snug">
+            {mode === 'register' ? 'Casi listo' : 'Un momento más'}
+          </h2>
+          <p className="text-sm text-slate-500 mt-1">
             {mode === 'register'
-              ? 'Primera vez con Google. Captura tu cara para futuros accesos.'
-              : 'Credenciales correctas. Verifica tu identidad con la cámara.'}
+              ? 'Necesitamos una foto tuya para reconocerte la próxima vez'
+              : 'Mira a la cámara para confirmar que eres tú'}
           </p>
-          {error && (
-            <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-          <FaceCapture
-            onCapture={handleCapture}
-            label={mode === 'register' ? 'Capturar cara' : 'Verificar identidad'}
-          />
-        </CardContent>
-      </Card>
-    </main>
+        </div>
+
+        <FaceCapture
+          onCapture={handleCapture}
+          label={mode === 'register' ? 'Tomar foto' : 'Soy yo'}
+        />
+
+        {error && (
+          <p className="text-sm text-red-600">{error}</p>
+        )}
+      </div>
+    </AuthLayout>
   )
 }
